@@ -12,10 +12,11 @@
 #define BS1_NOEXTEND 0x02
     
 
-double bs1_base(double s[], int k, double x, int i);
-int mod(int i, int k);
-double bs1_tab (double s[], int k, double val[], int n, double a, double b, double x, int d);
-void bs1_design (double s[], int k, int n, double a, double b, double x, int d, double ret[]);
+
+double bxspline(double x, double s[], int order, double tab[], int Pars, bool per, int d);
+void  vbxspline(double x, double s[], int order, int Pars, bool per, int d, double bxsrow[]);
+double bxs_base(double s[], int order, double x, int i);
+inline int mod(int i, int order, bool per);
 
 #ifdef __cplusplus
   } // extern "C"

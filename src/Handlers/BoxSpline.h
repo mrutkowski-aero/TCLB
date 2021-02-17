@@ -11,6 +11,7 @@ class  BoxSpline  : public  Design  {
 	int Pars;
 	int Pars2;
 	double * tab2;
+	double * s;
 	double lower, upper;
 	FILE * f;
 	Handler * hand;

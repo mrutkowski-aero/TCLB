@@ -1,4 +1,4 @@
-#include "boxspline1.h"
+#include "boxspline.h"
 
 /**
  * @brief Function for evaluating base 1D monotonic box-spline
@@ -12,7 +12,7 @@
  * 
  * @code
  * double s[2] = {0.1, 0.1};
- * printf("Value: %lg\n", bs1_base(s,k,3.14,0);
+ * printf("Value: %lg\n", bxs_base(s,k,3.14,0);
  * @endcode
  * The "derivative leval" argument is the order of derivative (or integral in the negatives)
  * to calculate. Zero means evaluation of function, one evaluation of it's derivative, and
@@ -26,74 +26,73 @@
  * @note See the general documentation for definitions
  * @warning Does not check input
  */
-double bs1_base(double s[], int k, double x, int i) {
-  if (k > 0) {
-    if (s[0] == 0) {
-      return bs1_base(s+1,k-1,x,i);
-    } else {
-      return (bs1_base(s+1,k-1,x+s[0]/2,i-1) - bs1_base(s+1,k-1,x-s[0]/2,i-1))/s[0];
-    }
-  } else {
-    if (x < 0) return 0;
-    if (i > 0) return 0;
-    double ret = 1;
-    for (; i<0; i++) ret = -ret * x / i;
-    return ret;
-  }
-}
-//aaa
 
-inline int mod(int i, int k) {
-  return ((i % k) + k) % k;
+double bxs_base(double *s, int order, double x, int i) {
+	if (order > 0) {
+		if (s[0] == 0) {
+			return bxs_base(s + 1, order - 1, x, i);
+		}
+		else {
+			return (bxs_base(s + 1, order - 1, x + s[0] / 2, i - 1) - bxs_base(s + 1, order - 1, x - s[0] / 2, i - 1)) / s[0];
+		}
+	}
+	else {
+		if (x < 0) return 0;
+		if (i > 0) return 0;
+		double ret = 1;
+		for (; i < 0; i++) ret = -ret * x / i;
+		return ret;
+	}
 }
 
-/**
- * @brief Function for evaluating 1D box-spline
- */
-double bs1_tab (double s[], int k, double val[], int n, double a, double b, double x, int d) {
-  double dx = (b-a)/n; // Divide the overall [a,b] interval into n parts
-  x = x - a; // Move everything to the start of the interval [a,b]
-  int w = floor(x/dx); // Calculate in which small interval we are.
-  double ret = 0;
-  if (d <= 0) ret += val[mod(w,n)];
-  int i = w;
-  for (i=w+1; i<100*n; i++) {
-    double c = bs1_base(s,k,x-i*dx,d);
-    if (c == 0) break;
-    ret = ret + c*(val[mod(i,n)] - val[mod(i-1,n)]);
-  }
-  for (i=w; i>-100*n;i--) {
-    double c = bs1_base(s,k,i*dx-x,d);
-    if (d % 2 == 1) c = -c;
-    if (c == 0) break;
-    ret = ret + c*(val[mod(i-1,n)] - val[mod(i,n)]);
-  }
-  return ret;
+double bxspline(double x, double* s, int order, double* tab, int Pars, bool per, int d) {
+	double dx = 1.0 / Pars; // Divide the overall [a,b] interval into Pars parts
+	int w = floor(x / dx); // Calculate in which small interval we are.
+	double ret = 0;
+	if (d <= 0) ret += tab[mod(w, Pars, per)];
+	int i = w;
+	for (i = w + 1; i < 100 * Pars; i++) {
+		double c = bxs_base(s, order, x - i * dx, d);
+		if (c == 0) break;
+		ret = ret + c * (tab[mod(i, Pars, per)] - tab[mod(i - 1, Pars, per)]);
+	}
+	for (i = w; i > -100 * Pars; i--) {
+		double c = bxs_base(s, order, i * dx - x, d);
+		if (d % 2 == 1) c = -c;
+		if (c == 0) break;
+		ret = ret + c * (tab[mod(i - 1, Pars, per)] - tab[mod(i, Pars, per)]);
+	}
+	return ret;
+}
+
+void vbxspline(double x, double* s, int order, int Pars, bool per, int d, double* bxsrow){
+	double dx = 1.0 / Pars; // Divide the overall [a,b] interval into Pars parts
+	int w = floor(x / dx); // Calculate in which small interval we are.
+	int i = w;
+	for (i = 0; i < Pars; i++) bxsrow[i] = 0;
+	if (d <= 0) bxsrow[mod(w, Pars, per)] += 1;
+	for (i = w + 1; i < 100 * Pars; i++) {
+		double c = bxs_base(s, order, x - i * dx, d);
+		if (c == 0) break;
+		bxsrow[mod(i, Pars, per)] += c;
+		bxsrow[mod(i - 1, Pars, per)] += -c;
+	}
+	for (i = w; i > -100 * Pars; i--) {
+		double c = bxs_base(s, order, i * dx - x, d);
+		if (d % 2 == 1) c = -c;
+		if (c == 0) break;
+		bxsrow[mod(i - 1, Pars, per)] += c;
+		bxsrow[mod(i, Pars, per)] += -c;
+	}
 }
 
 
-/**
- * @brief Function for evaluating 1D box-spline
- */
-void bs1_design (double s[], int k, int n, double a, double b, double x, int d, double ret[]) {
-  double dx = (b-a)/n; // Divide the overall [a,b] interval into n parts
-  x = x - a; // Move everything to the start of the interval [a,b]
-  int w = floor(x/dx); // Calculate in which small interval we are.
-  int i = w;
-  for (i=0; i<n; i++) ret[i] = 0;
-  if (d <= 0) ret[mod(w,n)] += 1;
-  for (i=w+1; i<100*n; i++) {
-    double c = bs1_base(s,k,x-i*dx,d);
-    if (c == 0) break;
-    ret[mod(i,n)] += c;
-    ret[mod(i-1,n)] += -c;
-  }
-  for (i=w; i>-100*n;i--) {
-    double c = bs1_base(s,k,i*dx-x,d);
-    if (d % 2 == 1) c = -c;
-    if (c == 0) break;
-    ret[mod(i-1,n)] += c;
-    ret[mod(i,n)] += -c;
-  }
+inline int mod(int i, int Pars, bool per) {
+	//option for nonperiodic movement, but ends are flat
+	//if (i <= 0 && !per) return 0;
+	//if (i >= Pars && !per) return Pars-1;
+	return ((i % Pars) + Pars) % Pars;
 }
+
+
 

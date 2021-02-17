@@ -47,6 +47,35 @@ int BoxSpline::Init () {
 		} else {
 			order=3;
 		}
+		
+		s = new double[4];
+		attr = node.attribute("s0");
+		if (attr) {
+			s[0]=attr.as_double();
+		} else {
+			s[0]=0;
+		}
+		
+		attr = node.attribute("s1");
+		if (attr) {
+			s[1]=attr.as_double();
+		} else {
+			s[1]=0;
+		}
+		
+		attr = node.attribute("s2");
+		if (attr) {
+			s[2]=attr.as_double();
+		} else {
+			s[2]=0;
+		}
+		
+		attr = node.attribute("s3");
+		if (attr) {
+			s[3]=attr.as_double();
+		} else {
+			s[3]=0;
+		}
 
 		attr = node.attribute("lower");
 		if (attr) {
@@ -78,8 +107,7 @@ int BoxSpline::NumberOfParameters () {
 
 
 double BoxSpline::Pos (int j) {
-		if (per) return (1.0*j)/Pars2;
-		return j/(Pars2-1.0);
+		return (1.0*j) / Pars2;
 	};
 
 
@@ -90,50 +118,54 @@ int BoxSpline::Parameters (int type, double * tab) {
 			output("Getting the params and making fourier decomposition\n");
 			(*hand)->Parameters(type, tab2);
 			{
-                            double * mat = (double*) malloc(sizeof(double)*Pars*Pars);
-                            double * Y = (double*) malloc(sizeof(double)*Pars);
-                            for (int i=0; i<Pars;i++) {
-                                    Y[i]=0;
-                                    for (int k=0; k<Pars;k++) mat[i+Pars*k] = 0;
-                            }
-                            for (int j=0; j<Pars2; j++) {
-                                    double x = Pos(j);
-                                    for (int i=0; i<Pars;i++) {
-                                            double w = boxspline_b(x, Pars, i, order, per);
-                                            Y[i] += w * tab2[j];
-                                            for (int k=0; k<Pars;k++) mat[i+Pars*k] += w * boxspline_b(x, Pars, k, order, per);
-                                    }
-                            }
-                            for (int i=0; i<Pars;i++) {
+							double * mat = (double*)malloc(sizeof(double)*Pars*Pars);
+							double * Y = (double*)malloc(sizeof(double)*Pars);
+							double * bxsrow = (double*)malloc(sizeof(double)*Pars);
+
+							for (int i = 0; i < Pars; i++) {
+								Y[i] = 0.0;
+								for (int k = 0; k < Pars; k++) mat[i + Pars * k] = 0.0;
+							}
+							for (int j = 0; j < Pars2; j++) {
+								double x = Pos(j);
+								vbxspline(x, s, order, Pars, per, 0, bxsrow);
+								for (int i = 0; i < Pars; i++) {
+									Y[i] += bxsrow[i] * tab2[j];
+									for (int k = 0; k < Pars; k++) mat[i + Pars * k] += bxsrow[i] * bxsrow[k];
+								}
+							}
+							for (int i=0; i<Pars;i++) {
                                     for (int k=0; k<Pars;k++) printf("%5lf ", mat[i+Pars*k]);
-				printf("| %5lf\n", Y[i]);
+									printf("| %5lf\n", Y[i]);
                             }
 			    
 			    GaussSolve (mat, Y, tab, Pars);
                             free(mat);
+							free(bxsrow);
                             free(Y);
 			}
 			return 0;
 		case PAR_SET:
-			output("Setting the params with a fourier series\n");
-			for (int j=0; j<Pars2; j++) {
-				tab2[j] = 0;
-				double x = Pos(j);
-				for (int i=0; i<Pars;i++) {
-					tab2[j] += boxspline_b(x, Pars, i, order, per) * tab[i];
-				}
-			}
+							double * bxsrow = (double*)malloc(sizeof(double)*Pars);
+							printf("Setting the params with a fourier series\n");
+							for (int j = 0; j < Pars2; j++) {
+								tab2[j] = 0;
+								double x = Pos(j);
+								vbxspline(x, s, order, Pars, per, 0, bxsrow);
+								for (int i = 0; i < Pars; i++) tab2[j] += bxsrow[i] * tab[i];
+							}
+
+							free(bxsrow);
 			(*hand)->Parameters(type, tab2);
 			return 0;
 		case PAR_GRAD:
 			output("Getting gradient and making fourier decomposition\n");
 			(*hand)->Parameters(type, tab2);
-			for (int i=0; i<Pars;i++) {
-				tab[i] = 0;
-				for (int j=0; j<Pars2; j++) {
-					double x = Pos(j);
-					tab[i] += boxspline_b(x, Pars, i, order, per) * tab2[j];
-				}
+			for (int i=0; i<Pars;i++) tab[i] = 0;
+			for (int j=0; j<Pars2;j++) {
+				double x = Pos(j);
+				vbxspline(x, s, order, Pars, per, 0, bxsrow);
+				for (int i=0; i<Pars; j++) tab[i] += bxsrow[i] * tab2[j];
 			}
 			return 0;
 		case PAR_UPPER:
