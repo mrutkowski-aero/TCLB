@@ -23,8 +23,8 @@ AddQuantity(name="U", unit="m/s", vector=T);
 AddQuantity(name="P", unit="Pa");
 AddQuantity(name="F", unit="N", vector=T);
 
-AddSetting(name="omega", comment='relaxation factor')
-AddSetting(name="nu", omega='1.0/(3*nu + 0.5)', default=0.16666666, comment='viscosity')
+AddSetting(name="omega", comment='relaxation factor', default=1)
+AddSetting(name="nu", omega='1.0/(3*nu + 0.5)', comment='viscosity')
 AddSetting(name="Velocity", default="0m/s", comment='inlet velocity')
 AddSetting(name="Temperature", comment='temperature of the liquid/gas')
 AddSetting(name="FAcc", comment='Multiplier of potential')
@@ -58,6 +58,14 @@ AddGlobal(name="WallForceY", comment='force y')
 
 AddNodeType(name="NMovingWall", group="BOUNDARY")
 AddNodeType(name="MovingWall", group="BOUNDARY")
-AddNodeType(name="ESymmetry",group="BOUNDARY")
-AddNodeType(name="NSymmetry",group="BOUNDARY")
-AddNodeType(name="SSymmetry",group="BOUNDARY")
+AddNodeType(name="ESymmetry", group="BOUNDARY")
+AddNodeType(name="NSymmetry", group="BOUNDARY")
+AddNodeType(name="SSymmetry", group="BOUNDARY")
+AddNodeType(name="EPressure", group="BOUNDARY")
+AddNodeType(name="EVelocity", group="BOUNDARY")
+AddNodeType(name="Solid", group="BOUNDARY")
+AddNodeType(name="Wall", group="BOUNDARY")
+AddNodeType(name="WPressure", group="BOUNDARY")
+AddNodeType(name="WVelocity", group="BOUNDARY")
+AddNodeType(name="BGK", group="COLLISION")
+AddNodeType(name="MRT", group="COLLISION")

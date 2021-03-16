@@ -22,25 +22,25 @@ public:
     MaxZones=0;
     debug1("TIME_SEG: %d\n", TIME_SEG);
     cpuValues = (real_t**) malloc(sizeof(real_t*) * TIME_SEG);
-    assert(cpuValues != NULL);
+    assert(TIME_SEG == 0 || cpuValues != NULL);
     cpuTab = (real_t**) malloc(sizeof(real_t*) * TIME_SEG);
-    assert(cpuTab != NULL);
+    assert(TIME_SEG == 0 || cpuTab != NULL);
     for (int i=0; i<TIME_SEG; i++) {
       cpuValues[i] = NULL;
       cpuTab[i] = NULL;
     }
     cpuConst = (real_t*) malloc(sizeof(real_t) * TIME_SEG);
-    assert(cpuConst != NULL);
+    assert(TIME_SEG == 0 || cpuConst != NULL);
     for (int i=0; i<TIME_SEG; i++) {
       cpuConst[i] = 0.0;
     }
     DEBUG_M;
     debug0("&gpuTab: %p, size: %ld\n", &gpuTab, sizeof(real_t*) * TIME_SEG);
     CudaMalloc((void**) &gpuTab, sizeof(real_t*) * TIME_SEG);
-    assert(gpuTab != NULL);
+    assert(TIME_SEG == 0 || gpuTab != NULL);
     DEBUG_M;
     CudaMalloc((void**) &gpuConst,   sizeof(real_t)  * TIME_SEG);
-    assert(gpuConst != NULL);
+    assert(TIME_SEG == 0 || gpuConst != NULL);
     DEBUG_M;
     CopyToGPU();
     DEBUG_M;
@@ -59,10 +59,12 @@ public:
     assert(z >= -1);
     assert(z <   ZONE_MAX);
     zone_max(z);
+    bool is_already_reported = false;
     if (z == -1) {
       for (int i=0;i<ZONE_MAX; i++) {
-        if (cpuConst[s+ZONESETTINGS*i] != 0.0 && cpuConst[s+ZONESETTINGS*i] != val ){
+        if (cpuConst[s+ZONESETTINGS*i] != 0.0 && cpuConst[s+ZONESETTINGS*i] != val && !is_already_reported){
              WARNING("Zone-specific settings in zone %d were overwritten from %lf to %lf", i, cpuConst[s+ZONESETTINGS*i], val );
+             is_already_reported = true;
         }
         cpuConst[s+ZONESETTINGS*i] = val;
       }

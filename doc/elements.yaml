@@ -1,23 +1,26 @@
-
 types:
   nodetypes:
     name: Node Type Brush
     children:
       - type: geom
+      - type: predefined
       - type: bool
       - special: blocks
     attr:
       - name: mask
         val:
           select:
-            special: NodeTypeGroup
-          example:
-            ALL
+            - special: NodeTypeGroups
       - type: geom
+      - name: name
+        val:
+          string: zonename
   geom:
     name: Geometry Primitive
     attr:
       - type: geom
+  predefined:
+    name: Predefined geometry shapes
   bool:
     name: Geometry Boolean Operation
     children:
@@ -31,6 +34,7 @@ types:
       - name: Iterations
         val:
           unit: int
+        use: required
   setup:
     name: Setup Elements
   callback:
@@ -51,18 +55,73 @@ types:
       - name: output
         val:
           string: path
-          example: output/
+  clbconfig:
+    name: CLBConfig
+    attr:
+      - name: output
+        val:
+          string: path
+        use: required
+        default: output/
+  units:
+    name: units
+    children:
+      - type: params
   design:
     name: Optimization and Optimal Control
 
+CLBConfig:
+  type: clbconfig
+  children:
+    - type: units
+    - type: geometry
+    - type: action
+    - type: callback
+    - type: container
+    - type: params
+    - type: setup
+  attr:
+    - name: permissive
+      val:
+        bool:
+    - name: version
+      val:
+        string: version 
 
 Geometry:
   type: geometry
+  attr:
+  - name: nx
+    val:
+      unit: int
+  - name: ny
+    val:
+      unit: int
+  - name: nz
+    val:
+      unit: int
+
+Init:
+  comment: >
+   Initialize lattice. Init is also always run at the end of `<Model/`> element
+  type: callback
 
 Solve:
   comment: >
    Main solution element. It runs a prescribed number of iterations.
   type: action
+
+RunAction:
+  comment: >
+   Main solution element. It runs a prescribed number of iterations.
+  type: action
+  attr:
+    - name: name
+      optional: false
+      val:
+        select:
+          - special: Actions
+      comment: The name of the action to run
 
 VTK:
   comment: Export VTK data
@@ -73,13 +132,52 @@ VTK:
       optional: true
       val:
         list:
-        - special: Quantities
-        - special: GeometryComponents
+          - special: Quantities
+          - special: NodeTypeGroups
       comment: List of Quantities and Geometry Components to export.
     - name: name
       val: 
         string: outname
       comment: Name of the VTK file. 
+
+HDF5:
+  comment: Export HDF5 data file and Xdmf description
+  example: <HDF5 Iterations="1000" what="U,Rho"/>
+  type: callback
+  attr:
+    - name: what
+      optional: true
+      val:
+        list:
+          - special: Quantities
+          - special: NodeTypeGroups
+      comment: List of Quantities and Geometry Components to export.
+    - name: name
+      val:
+        string: outname
+      comment: Name of the HDF5 and Xdmf file.
+    - name: compress
+      val: 
+        bool:
+      comment: Use ZLIB deflation filter to compress output
+    - name: write_xdmf
+      val: 
+        bool:
+      comment: Write Xdmf accompaning file describing the data for visualisation
+    - name: point_data
+      val:
+        bool:
+      comment: Write Xdmf that described the data as Point Data and not Cell Data
+    - name: chunk
+      val:
+        string: 3int
+      comment: HDF5 Chunk size (not supported yet)
+    - name: precision
+      val:
+        select:
+          - float
+          - double
+      comment: "Select the precision of the HDF5 data. If this doesn't match the calculation type, this can conflict with compression."
 
 TXT:
   comment: Export data to TXT file
@@ -91,9 +189,7 @@ TXT:
       comment: Name of the TXT file. 
     - name: gzip
       val: 
-        select:
-          - Yes
-          - No
+        bool:
       comment: If to compress the TXT output
 
 Catalyst:
@@ -111,26 +207,12 @@ Catalyst:
       val: 
         string: file
       comment: Catalyst co-processing Python script
+      use: required
     - name: preprocess
       val:
-        select:
-          - yes
-          - no
-      default: yes
+        bool:
+      default: true
       comment: If active, the Python script will be modified so that the files will be placed in the output directory
-
-
-
-
-CLBConfig:
-  type: container
-  children:
-    - type: geometry
-    - type: action
-    - type: callback
-    - type: container
-    - type: params
-    - type: setup
 
 Log:
   type: callback
@@ -145,7 +227,7 @@ Stop:
   type: callback
   attr:
     - name:
-        special: Globals
+        - special: Globals
       val:
         numeric: float
       comment: Limit on change of a specific Global
@@ -154,20 +236,27 @@ Stop:
         numeric: int
       comment: Numer of times the change have to be below the limit to stop the computation.
 
-
 PID:
   comment: PID controller. Allows to achive a specified value of an Global, with tweaking of a Setting
   example: <PID Flux="10.0" control="ForceX" scale="0.01" DerivativeTime="100" IntegrationTime="10000" Iterations="10"/>
   type: callback
   attr:
-    - name:
-        special: Globals
+    - name: integral
       val:
-        numeric: float
+        select:
+        - special: Globals
       comment: Target value for a specified Global
+      use: required
     - name: control
       val:
-        special: Settings
+        select:
+          - special: Settings
+      comment: The setting to control (currently only zonal settings are supported)
+      use: required
+    - name: zone
+      val:
+        select:
+          - special: Zones
       comment: The setting to control (currently only zonal settings are supported)
     - name: scale
       val:
@@ -187,18 +276,17 @@ Sample:
   example: <Sample Iterations="1000" what="U,P" ><Point dx="10" dy="20"/></Sample>
   type: callback
   attr:
-    - name: Iterations
-      val:
-        numeric: int
-      comment: Iteration period after which the sampled data will be written to a file
     - name: what
       optional: true
       val:
         list:
-        - special: Quantities
+          - special: Quantities
       comment: List of Quantities to be sampled. By default all are sampled.
 
 Box:
+  type: geom
+
+Sphere:
   type: geom
 
 Pipe:
@@ -212,27 +300,81 @@ Wedge:
         select:
         - UpperLeft
         - UpperRight
-        - BottomLeft
-        - BottomRight
+        - LowerLeft
+        - LowerRight
+      use: required
 
 STL:
+  comment: >
+    Imports a STL file as geometrical object. The element works in two modes.
+    In the first mode, it fills elements inside or outside of the STL geometry (casting rays along some axis).
+    In the second mode (`side="surface"`) it fills elements touching the geometry (on both sides) and
+    **calculates the cuts* for Interpolated-BounceBack-type conditions.
+  example: <STL file="geometry.stl" scale="1m" x="10" side="out"/>
   type: geom
   attr:
     - name: file
-      val: file
-    - side:
-      - out
-      - in
-      - surface
+      val:
+        file: "*.stl"
+      comment: STL file to import
+      use: required
+    - name: side
+      val:
+        select:
+        - out
+        - in
+        - surface
+      comment: Specifies if to fill the interior (in), exterior (out), or the surface (see description)
+      default: in
+    - name: ray_axis
+      val:
+        select:
+        - "x"
+        - "y"
+        - "z"
+      comment: Specifies the axis along which rays will be cast for in/out filling of STL
+    - name: scale
+      val:
+        unit: float
+      comment: Specifies the scale by which the STL geometry should be multiplied. If you work in physical units, this can be e.g. "1m"
+    - name: x
+      val:
+        unit: float
+      comment: Specifies the offset by which the STL geometry should be moved
+    - name: y
+      val:
+        unit: float
+      comment: Specifies the offset by which the STL geometry should be moved
+    - name: z
+      val:
+        unit: float
+      comment: Specifies the offset by which the STL geometry should be moved
 
-Params:
+Inlet:
+  type: predefined
+
+Outlet:
+  type: predefined
+
+Channel:
+  type: predefined
+
+Tunnel:
+  type: predefined
+
+
+Param:
   type:
     params
   attr:
-    - name:
-        special: Settings
+    - name: name
+      val:
+        select:
+          - special: Settings
+    - name: value
       val:
         unit: float
+      use: required
     - name: gauge
       val:
         unit: float
@@ -243,6 +385,8 @@ Model:
     - type: params
     - type: setup
 
+Units:
+  type: units
 
 Adjoint:
   type: action
@@ -288,15 +432,15 @@ Optimize:
         numeric: int
       comment: Maximal number of evalulations (optimizer iterations)
 
-
 OptimalControl:
   type: design
   attr:
     - name: what
       val:
         select:
-          special: SettingInZone
+          - special: SettingInZone
       comment: Select a time-dependent setting to optimize
+      use: required
 
 OptimalControlSecond:
   comment: >
@@ -309,7 +453,7 @@ OptimalControlSecond:
     - name: what
       val:
         select:
-          special: SettingInZone
+          - special: SettingInZone
       comment: Select a time-dependent setting to optimize
     - name: lower
       val:
@@ -358,9 +502,7 @@ BSpline:
       comment: Number of degrees of freedom (parameters) of the b-spline
     - name: periodic
       val:
-        select:
-          - yes
-          - no
+        bool:
       comment: If the b-spline should be periotic in the control period
     - name: lower
       val:
@@ -431,6 +573,16 @@ Repeat:
         numeric: int
       comment: Numer of Times to repeat a segment
 
+Container:
+  type: action
+  comment: A simple container element
+  example: |
+    <Container>
+      <VTK Iterations="10"/>
+      <Solve Iterations="1000"/>
+    </Container>
+  attr:
+
 Control:
   type: setup
   comment: Element prescribing time-dependent Settings
@@ -500,7 +652,7 @@ LoadBinary:
     - name: comp
       val:
         select:
-          special: Fields
+          - special: Fields
       comment: Field to load from the binary file
 
 SaveBinary:
@@ -518,9 +670,8 @@ SaveBinary:
     - name: comp
       val:
         select:
-          special: Fields
+          - special: Fields
       comment: Field to save to the binary file
-
 
 LoadMemoryDump:
   type: action
@@ -545,3 +696,17 @@ SaveMemoryDump:
       val:
         string: file
       comment: full path to the binary file
+
+EvalIf:
+  type: action
+  comment: |
+        Evaluate subactions only if opt_present build (d2qg and d2q9_bc, option is *bc* )options are present, or only if opt_missing is missing
+  attr:
+    - name: opt_present
+      val:
+        string: build opts
+      comment:
+    - name: opt_missing
+      val:
+        string: build opt
+      comment: 

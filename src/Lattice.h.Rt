@@ -10,6 +10,10 @@
 #include "ZoneSettings.h"
 #include "SyntheticTurbulence.h"
 #include "Sampler.h"
+#include "RemoteForceInterface.h"
+#include "BallTree.h"
+#include "pinned_allocator.hpp"
+
 class lbRegion;
 class LatticeContainer;
 
@@ -71,6 +75,12 @@ public:
   double globals[GLOBALS]; ///< Table of Globals
   lbRegion region; ///< Local lattice region
   MPIInfo mpi; ///< MPI information
+  typedef rfi::RemoteForceInterface< rfi::ForceCalculator, rfi::RotParticle, rfi::ArrayOfStructures, real_t, pinned_allocator<real_t> > rfi_t;
+  rfi_t RFI;
+  typedef BallTree< rfi_t > balltree_t;
+  balltree_t BT;
+  size_t particle_data_size_max;
+  size_t balltree_data_size_max;
   char snapFileName[STRING_LEN];
   Lattice (lbRegion region, MPIInfo, int);
   ~Lattice ();
@@ -141,6 +151,20 @@ public:
         void <?%s FunName ?>_Opt(int, int, int, int, int); 
         void <?%s FunName ?>(int, int, int); <?R
     } ?>
+        void IterateAction(int action, int iter, int iter_type);
+        inline void RunAction(int action, int a, int b, int iter_type) {
+		switch (action) { <?R
+for (n in names(Actions)) {
+        a = Actions[[n]]
+        if (n == "Iteration") {
+                FunName = "Iteration"
+        } else {
+                FunName = paste("Action",n,sep="_")
+        } ?>
+		case ACTION_<?%s n ?>: return <?%s FunName ?>(a, b, iter_type); <?R
+} ?>
+		}
+	}
   void inline Iterate()  { IterateT(ITER_NORM);   };
   void inline IterateG() { IterateT(ITER_GLOBS);  };
   void inline Stream()   { IterateT(ITER_STREAM); };
