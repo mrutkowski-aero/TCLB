@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "unit.h"
 #include "spline.h"
+#include "bxspline.h"
 #include <sstream>
 #include <string>
 #include <fstream>

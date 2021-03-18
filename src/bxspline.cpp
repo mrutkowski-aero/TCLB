@@ -1,4 +1,4 @@
-#include "boxspline.h"
+#include "bxspline.h"
 
 /**
  * @brief Function for evaluating base 1D monotonic box-spline

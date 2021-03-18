@@ -1,5 +1,5 @@
-#ifndef BOXSPLINE1_H
-#define BOXSPLINE1_H
+#ifndef BXSPLINE_H
+#define BXSPLINE_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,8 +8,8 @@
   extern "C" {
 #endif
 
-#define BS1_PERIODIC 0x01
-#define BS1_NOEXTEND 0x02
+#define BXS_PERIODIC 0x01
+#define BXS_NOEXTEND 0x02
     
 
 
@@ -22,4 +22,4 @@ inline int mod(int i, int order, bool per);
   } // extern "C"
 #endif
 
-#endif // BOXSPLINE1_H
+#endif // BOXSPLINE_H

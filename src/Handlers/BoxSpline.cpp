@@ -146,26 +146,31 @@ int BoxSpline::Parameters (int type, double * tab) {
 			}
 			return 0;
 		case PAR_SET:
-							double * bxsrow = (double*)malloc(sizeof(double)*Pars);
-							printf("Setting the params with a fourier series\n");
-							for (int j = 0; j < Pars2; j++) {
-								tab2[j] = 0;
-								double x = Pos(j);
-								vbxspline(x, s, order, Pars, per, 0, bxsrow);
-								for (int i = 0; i < Pars; i++) tab2[j] += bxsrow[i] * tab[i];
-							}
-
-							free(bxsrow);
-			(*hand)->Parameters(type, tab2);
+			{				
+				double * bxsrow = (double*)malloc(sizeof(double)*Pars);
+				printf("Setting the params with a fourier series\n");
+				for (int j = 0; j < Pars2; j++) {
+					tab2[j] = 0;
+					double x = Pos(j);
+					vbxspline(x, s, order, Pars, per, 0, bxsrow);
+					for (int i = 0; i < Pars; i++) tab2[j] += bxsrow[i] * tab[i];
+				}
+				free(bxsrow);
+				(*hand)->Parameters(type, tab2);
+			}
 			return 0;
 		case PAR_GRAD:
-			output("Getting gradient and making fourier decomposition\n");
-			(*hand)->Parameters(type, tab2);
-			for (int i=0; i<Pars;i++) tab[i] = 0;
-			for (int j=0; j<Pars2;j++) {
-				double x = Pos(j);
-				vbxspline(x, s, order, Pars, per, 0, bxsrow);
-				for (int i=0; i<Pars; j++) tab[i] += bxsrow[i] * tab2[j];
+			{
+				double * bxsrow = (double*)malloc(sizeof(double)*Pars);
+				output("Getting gradient and making fourier decomposition\n");
+				(*hand)->Parameters(type, tab2);
+				for (int i=0; i<Pars;i++) tab[i] = 0;
+				for (int j=0; j<Pars2;j++) {
+					double x = Pos(j);
+					vbxspline(x, s, order, Pars, per, 0, bxsrow);
+					for (int i=0; i<Pars; j++) tab[i] += bxsrow[i] * tab2[j];
+				}
+				free(bxsrow);
 			}
 			return 0;
 		case PAR_UPPER:
