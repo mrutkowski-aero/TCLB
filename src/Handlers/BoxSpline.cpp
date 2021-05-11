@@ -48,7 +48,7 @@ int BoxSpline::Init () {
 			order=3;
 		}
 		
-		s = new double[4];
+		s = new double[10]();
 		attr = node.attribute("s0");
 		if (attr) {
 			s[0]=attr.as_double();
