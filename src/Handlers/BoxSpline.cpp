@@ -168,7 +168,7 @@ int BoxSpline::Parameters (int type, double * tab) {
 				for (int j=0; j<Pars2;j++) {
 					double x = Pos(j);
 					vbxspline(x, s, order, Pars, per, 0, bxsrow);
-					for (int i=0; i<Pars; j++) tab[i] += bxsrow[i] * tab2[j];
+					for (int i=0; i<Pars; i++) tab[i] += bxsrow[i] * tab2[j];
 				}
 				free(bxsrow);
 			}
