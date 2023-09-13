@@ -202,6 +202,19 @@ CudaDeviceFunction void CollisionMRT()
 	S[c(5,7,9,17:19)] = PV("gamma2");
 	C(R, f %*% MRTMAT);
 	C(R[selR], (S*(R-Req))[selR]);
+?>
+
+
+    real_t ux = Jx / rho;
+    real_t uy = Jy / rho;
+    real_t uz = Jz / rho;
+    real_t Fx = 2*w*(Vx*d - ux);
+    real_t Fy = 2*w*(Vy*d - uy);
+    real_t Fy = 2*w*(Vy*d - uz);
+    Jx += rho*(ForceX + Fx);
+    Jy += rho*(ForceY + Fy);
+    Jz += rho*(ForceZ + Fz);
+<?R
 	C(R[selR], (R + Req)[selR]);
 	# nearly ortogonal MRT matrix
     Mw = colSums(MRTMAT**2)

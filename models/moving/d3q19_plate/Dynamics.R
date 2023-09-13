@@ -78,9 +78,10 @@ AddSetting(name="Velocity", default=0, comment='inlet/outlet/init velocity', zon
 #AddSetting(name="VelocityZ", default=0, comment='inlet/outlet/init velocity', zonal=T, unit="m/s")
 AddSetting(name="Density", default=1, comment='inlet/outlet/init density', zonal=T, unit="kg/m3")
 AddSetting(name="Smag", default=1, comment='inlet density')
-#AddSetting(name="ExternalForceX", default=0, comment='external force x', zonal=T, unit="N/m3")
-#AddSetting(name="ExternalForceY", default=0, comment='external force y', zonal=T, unit="N/m3")
-#AddSetting(name="ExternalForceZ", default=0, comment='external force z', zonal=T, unit="N/m3")
+AddSetting(name="ForceX", comment='Force force X')
+AddSetting(name="ForceY", comment='Force force Y')
+AddSetting(name="ForceZ", comment='Force force Z')
+
 #AddSetting(name="PDX", default=0, comment='plate dimension X', unit="m")
 #AddSetting(name="PDY", default=0, comment='plate dimension Y', unit="m")
 #AddSetting(name="PDZ", default=0, comment='plate dimension Z', unit="m")
