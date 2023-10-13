@@ -18,7 +18,37 @@
     U   = Flow$U
     R   = Flow$R
 	selR= Flow$selR
+
+	X = U[,1]
+	Y = U[,2]
+	Z = U[,3]
+
+    renum = c(19, 1, 2, 3, 4, 5, 6, 7, 11, 8, 12, 9, 13, 10, 14, 15, 17, 16, 18)
+    I = rep(0, 19)
+    I[renum] = 1:19
 ?>
+
+<?R Inlet = function() { ?>
+	Nxy = (<?R C(sum(f[X == 0 & Y > 0]) - sum(f[X == 0 & Y < 0])) ?>)/2.;
+	Nxz = (<?R C(sum(f[X == 0 & Z > 0]) - sum(f[X == 0 & Z < 0])) ?>)/2.;
+
+	f<?%d -1 + I[ 1] ?> = f<?%d -1 + I[ 2] ?> + rho * ux / 3.;
+	f<?%d -1 + I[ 8] ?> = f<?%d -1 + I[11] ?> + rho * ux / 6. + Nxy;
+	f<?%d -1 + I[ 7] ?> = f<?%d -1 + I[12] ?> + rho * ux / 6. - Nxy;
+	f<?%d -1 + I[ 9] ?> = f<?%d -1 + I[14] ?> + rho * ux / 6. - Nxz;
+	f<?%d -1 + I[10] ?> = f<?%d -1 + I[13] ?> + rho * ux / 6. + Nxz;
+<?R } ?>
+
+<?R Outlet = function() { ?>
+	Nxy = (<?R C(sum(f[X == 0 & Y > 0]) - sum(f[X == 0 & Y < 0])) ?>)/2;
+	Nxz = (<?R C(sum(f[X == 0 & Z > 0]) - sum(f[X == 0 & Z < 0])) ?>)/2;
+
+	f<?%d -1 + I[ 2] ?> = f<?%d -1 + I[ 1] ?> - rho * ux / 3.0;
+	f<?%d -1 + I[11] ?> = f<?%d -1 + I[ 8] ?> - rho * ux / 6.0 - Nxy;
+	f<?%d -1 + I[12] ?> = f<?%d -1 + I[ 7] ?> - rho * ux / 6.0 + Nxy;
+	f<?%d -1 + I[14] ?> = f<?%d -1 + I[ 9] ?> - rho * ux / 6.0 + Nxz;
+	f<?%d -1 + I[13] ?> = f<?%d -1 + I[10] ?> - rho * ux / 6.0 - Nxz;
+<?R } ?>
 
 CudaDeviceFunction real_t getRho(){
 	return <?R C(sum(f)) ?>;
@@ -33,6 +63,26 @@ CudaDeviceFunction vector_t getU(){
 	u.z /= d;
 	if ((NodeType & NODE_BOUNDARY) == NODE_Wall) u.x = u.y = u.z = 0;
 	return u;
+}
+
+CudaDeviceFunction real_t getSolid(){
+    real_t TXYZ[3] = {PX,PY,PZ};
+    real_t MXYZ[3] = {X,Y,Z};
+
+<?R
+    RXT = matrix(c(1,0,0,0,cos(PRX),sin(PRX),0,-sin(PRX),cos(PRX)),3,3)
+    RYT = matrix(c(cos(PRY),0,-sin(PRY),0,1,0,sin(PRY),0,cos(PRY)),3,3)
+    RZT = matrix(c(cos(PRZ),sin(PRZ),0,-sin(PRZ),cos(PRZ),0,0,0,1),3,3)
+
+    TXYZ = PV(c("TXYZ[0]","TXYZ[1]","TXYZ[2]"))
+    MXYZ = PV(c("MXYZ[0]","MXYZ[1]","MXYZ[2]"))
+    C(MXYZ, MXYZ - TXYZ)
+    C(MXYZ, MXYZ %*% RZT)
+    C(MXYZ, MXYZ %*% RYT)
+    C(MXYZ, MXYZ %*% RXT)
+?>
+	real_t w = calcW(dx,dy);
+	return w;
 }
 
 CudaDeviceFunction float2 Color() {
@@ -70,39 +120,6 @@ CudaDeviceFunction void BounceBack()
         NULL})
 ?>
 }
-
-<?R
-	X = U[,1]
-	Y = U[,2]
-	Z = U[,3]
-
-        renum = c(19, 1, 2, 3, 4, 5, 6, 7, 11, 8, 12, 9, 13, 10, 14, 15, 17, 16, 18)
-        I = rep(0, 19)
-        I[renum] = 1:19
-
-?>
-
-<?R Inlet = function() { ?>
-	Nxy = (<?R C(sum(f[X == 0 & Y > 0]) - sum(f[X == 0 & Y < 0])) ?>)/2.;
-	Nxz = (<?R C(sum(f[X == 0 & Z > 0]) - sum(f[X == 0 & Z < 0])) ?>)/2.;
-
-	f<?%d -1 + I[ 1] ?> = f<?%d -1 + I[ 2] ?> + rho * ux / 3.;
-	f<?%d -1 + I[ 8] ?> = f<?%d -1 + I[11] ?> + rho * ux / 6. + Nxy;
-	f<?%d -1 + I[ 7] ?> = f<?%d -1 + I[12] ?> + rho * ux / 6. - Nxy;
-	f<?%d -1 + I[ 9] ?> = f<?%d -1 + I[14] ?> + rho * ux / 6. - Nxz;
-	f<?%d -1 + I[10] ?> = f<?%d -1 + I[13] ?> + rho * ux / 6. + Nxz;
-<?R } ?>
-
-<?R Outlet = function() { ?>
-	Nxy = (<?R C(sum(f[X == 0 & Y > 0]) - sum(f[X == 0 & Y < 0])) ?>)/2;
-	Nxz = (<?R C(sum(f[X == 0 & Z > 0]) - sum(f[X == 0 & Z < 0])) ?>)/2;
-
-	f<?%d -1 + I[ 2] ?> = f<?%d -1 + I[ 1] ?> - rho * ux / 3.0;
-	f<?%d -1 + I[11] ?> = f<?%d -1 + I[ 8] ?> - rho * ux / 6.0 - Nxy;
-	f<?%d -1 + I[12] ?> = f<?%d -1 + I[ 7] ?> - rho * ux / 6.0 + Nxy;
-	f<?%d -1 + I[14] ?> = f<?%d -1 + I[ 9] ?> - rho * ux / 6.0 + Nxz;
-	f<?%d -1 + I[13] ?> = f<?%d -1 + I[10] ?> - rho * ux / 6.0 - Nxz;
-<?R } ?>
 
 CudaDeviceFunction void WVelocity()
 {
@@ -148,10 +165,10 @@ CudaDeviceFunction void Run() {
 	case NODE_EPressure:
 		EPressure();
 		break;
-    case NODE_Wall:
 	case NODE_Solid:
+	case NODE_Wall:
 		BounceBack();
-        break;
+		break;
     }
     switch (NodeType & NODE_COLLISION) {
 	case NODE_MRT:
@@ -204,13 +221,16 @@ CudaDeviceFunction void CollisionMRT()
 	C(R[selR], (S*(R-Req))[selR]);
 ?>
 
-
+    //real_t w = getSolid();
     real_t ux = Jx / rho;
     real_t uy = Jy / rho;
     real_t uz = Jz / rho;
-    real_t Fx = 2*w*(Vx*d - ux);
-    real_t Fy = 2*w*(Vy*d - uy);
-    real_t Fy = 2*w*(Vy*d - uz);
+    //real_t Fx = 2*w*(Vx*d - ux);
+    //real_t Fy = 2*w*(Vy*d - uy);
+    //real_t Fy = 2*w*(Vz*d - uz);
+    real_t Fx = 0.0;
+    real_t Fy = 0.0;
+    real_t Fy = 0.0;
     Jx += rho*(ForceX + Fx);
     Jy += rho*(ForceY + Fy);
     Jz += rho*(ForceZ + Fz);
