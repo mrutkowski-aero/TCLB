@@ -297,7 +297,7 @@ M = matrix(c(
 		u[1]*u[1]*dw-u[2]*u[2]*dw,
 		u[1]*u[2]*dw
 	)
-        Sy = PV(paste("S",1:19,"",sep=""))
+    Sy = PV(paste("S",1:19,"",sep=""))
 	selR = c(4,5,6,7,8,9);
 #	cr = calcReq[selR]
 	Mw = colSums(M**2)
