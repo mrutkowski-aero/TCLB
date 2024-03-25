@@ -77,6 +77,14 @@ int BoxSpline::Init () {
 			s[3]=0;
 		}
 
+
+		attr = node.attribute("bounds");
+		if(attr) {
+			bounds = true;
+		} else {
+			bounds = false;
+		}
+
 		attr = node.attribute("lower");
 		if (attr) {
 			lower = solver->units.alt(attr.value());
@@ -174,14 +182,16 @@ int BoxSpline::Parameters (int type, double * tab) {
 			}
 			return 0;
 		case PAR_UPPER:
-			for (int i=0;i<Pars;i++) {
-				tab[i] = upper;
-			}
+			if(bounds)
+				for (int i=0;i<Pars;i++) {
+					tab[i] = upper;
+				}
 			return 0;
 		case PAR_LOWER:
-			for (int i=0;i<Pars;i++) {
-				tab[i] = lower;
-			}
+			if(bounds)
+				for (int i=0;i<Pars;i++) {
+					tab[i] = lower;
+				}
 			return 0;
 		default:
 			ERROR("Unknown type %d in call to Parameters in %s\n", type, node.name());

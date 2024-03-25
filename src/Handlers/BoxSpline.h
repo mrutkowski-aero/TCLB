@@ -16,6 +16,7 @@ class  BoxSpline  : public  Design  {
 	FILE * f;
 	Handler * hand;
 	bool per;
+	bool bounds;
 	int order;
 public:
 	static std::string xmlname;
