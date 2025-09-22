@@ -1,8 +1,4 @@
 #include "Consts.h"
-#ifdef EMBEDED_PYTHON
-    #include <Python.h>
-    #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#endif
 
 <?R
  library(gvector,quiet=TRUE,warn.conflicts=FALSE)
@@ -697,7 +693,7 @@ inline int Geometry::loadSweep(lbRegion reg, pugi::xml_node node)
 	int order=1;
 	attr = node.attribute("order");
 	if (attr) order = attr.as_int();
-	double dl=1e-3;
+	double dl=1e-4;
 	attr = node.attribute("step");
 	if (attr) dl = attr.as_double();
 	attr = node.attribute("steps");
@@ -728,19 +724,31 @@ inline int Geometry::loadSweep(lbRegion reg, pugi::xml_node node)
 		order = n-1;
 	}
     output("Making a Sweep over region (%ld) with %lf step\n",reg.size(), dl);
-    for (int x = reg.dx; x < reg.dx + reg.nx; x++)
-	for (int y = reg.dy; y < reg.dy + reg.ny; y++)
-	    for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-		for (double l=0;l<1; l+= dl) {
-			double x0 = bspline(l, nx, order);
-			double y0 = bspline(l, ny, order);
-			double z0 = bspline(l, nz, order);
-			double r = bspline(l, nr, order);
-			if ((x-x0)*(x-x0)+(y-y0)*(y-y0)+(z-z0)*(z-z0) < r*r) {
-			    Dot(x, y, z);
+
+	double x0_=-999.0, y0_=-999.0, z0_=-999.0, r0_=-999.0;
+    for (double l=0;l<1; l+= dl) {
+		double x0 = bspline(l, nx, order);
+		double y0 = bspline(l, ny, order);
+		double z0 = bspline(l, nz, order);
+		double r = bspline(l, nr, order);
+
+		if (abs(x0-x0_) < 0.25 && 
+			abs(y0-y0_) < 0.25 && 
+			abs(z0-z0_) < 0.25 && 
+			abs(r-r0_) < 0.25) {
+				continue;		
+		}
+		x0_ = x0; y0_ = y0; z0_ = z0; r0_ = r;
+
+		lbRegion tmpReg=reg.intersect(lbRegion(x0-r-1,y0-r-1,z0-r-1,2*r+2,2*r+2,2*r+2));
+		for (int x = tmpReg.dx; x < tmpReg.dx + tmpReg.nx; x++)
+		for (int y = tmpReg.dy; y < tmpReg.dy + tmpReg.ny; y++)
+		for (int z = tmpReg.dz; z < tmpReg.dz + tmpReg.nz; z++) {
+			if ((.5+x-x0)*(.5+x-x0)+(.5+y-y0)*(.5+y-y0)+(.5+z-z0)*(.5+z-z0) < r*r) {
+				Dot(x, y, z);
 			}
 		}
-	    }
+	}
 
     return 0;	
 }
@@ -767,7 +775,7 @@ int Geometry::Draw(pugi::xml_node & node)
 		for (int x = reg.dx; x < reg.dx + reg.nx; x++)
 		for (int y = reg.dy; y < reg.dy + reg.ny; y++)
 		    for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-			if (inSphere((.5 + x - reg.dx) / reg.nx, 0.5 - (y - .5  - reg.dy) / reg.ny / 2., (.5 + z - reg.dz) / reg.nz) ) {
+			if (inSphere((.5 + x - reg.dx) / reg.nx, 0.5 - (.5 + y - reg.dy) / reg.ny / 2., (.5 + z - reg.dz) / reg.nz) ) {
 			    Dot(x, y, z);
 			}
 		    }
@@ -895,6 +903,122 @@ int Geometry::Draw(pugi::xml_node & node)
 			    Dot(x,y,z);
 			}
 		}
+	} else if (strcmp(n.name(),"YPipe") == 0) {
+
+	double x0 = units.alt(n.attribute("x").value());
+	double y0 = units.alt(n.attribute("y").value());
+	double z0 = units.alt(n.attribute("z").value());
+
+	double Rx, Rz;
+	if ( n.attribute("R").empty() ) {
+	    Rx = units.alt(n.attribute("Rx").value());
+	    Rz = units.alt(n.attribute("Rz").value());
+	} else {
+	    double R = units.alt(n.attribute("R").value());
+	    Rx = R;
+	    Rz = R;
+	}
+
+	double Rx2 = Rx*Rx;
+	double Rz2 = Rz*Rz;
+
+	reg.dx = x0 - Rx - 5;
+	reg.dz = z0 - Rz - 5;
+
+	reg.nx = 2*Rx + 10;
+	reg.nz = 2*Rz + 10;
+
+	    debug1("Filling YPipe with flag %d (%d)\n, with center at (%lf,%lfi,%f) radius (%lf,%lf)", fg, fg_mask, x0, y0, z0, Rx, Rz);
+	    DEBUG1(reg.print();)
+		for (int y = reg.dy; y < reg.dy + reg.ny; y++)
+		for (int z = reg.dz; z < reg.dz + reg.nz; z++)
+       		    for (int x = reg.dx; x < reg.dx + reg.nx; x++) {
+		double xx = (.5 + x - y0);
+		double zz = (.5 + z - z0);
+			if (zz*zz/Rz2 + xx*xx/Rx2 < 1. ) {
+			    Dot(x,y,z);
+			}
+		}
+	} else if (strcmp(n.name(),"ZPipe") == 0) {
+
+	double x0 = units.alt(n.attribute("x").value());
+	double y0 = units.alt(n.attribute("y").value());
+	double z0 = units.alt(n.attribute("z").value());
+
+	double Rx, Ry;
+	if ( n.attribute("R").empty() ) {
+	    Rx = units.alt(n.attribute("Rx").value());
+	    Ry = units.alt(n.attribute("Ry").value());
+	} else {
+	    double R = units.alt(n.attribute("R").value());
+	    Rx = R;
+	    Ry = R;
+	}
+
+	double Rx2 = Rx*Rx;
+	double Ry2 = Ry*Ry;
+
+	reg.dx = x0 - Rx - 5;
+	reg.dy = y0 - Ry - 5;
+
+	reg.nx = 2*Rx + 10;
+	reg.ny = 2*Ry + 10;
+
+	    debug1("Filling YPipe with flag %d (%d)\n, with center at (%lf,%lfi,%f) radius (%lf,%lf)", fg, fg_mask, x0, y0, z0, Rx, Ry);
+	    DEBUG1(reg.print();)
+		for (int y = reg.dy; y < reg.dy + reg.ny; y++)
+		for (int z = reg.dz; z < reg.dz + reg.nz; z++)
+       		    for (int x = reg.dx; x < reg.dx + reg.nx; x++) {
+		double xx = (.5 + x - y0);
+		double yy = (.5 + y - y0);
+			if (yy*yy/Ry2 + xx*xx/Rx2 < 1. ) {
+			    Dot(x,y,z);
+			}
+		}
+	} else if (strcmp(n.name(),"XAnnulus") == 0) {
+
+	double x0 = units.alt(n.attribute("x").value());
+	double y0 = units.alt(n.attribute("y").value());
+	double z0 = units.alt(n.attribute("z").value());
+
+	double Ry_o, Rz_o;
+	double Ry_i, Rz_i;
+	if ( n.attribute("Ro").empty() ) {
+	    Ry_i = units.alt(n.attribute("Ry_i").value());
+	    Rz_i = units.alt(n.attribute("Rz_i").value());
+	    Ry_o = units.alt(n.attribute("Ry_o").value());
+	    Rz_o = units.alt(n.attribute("Rz_o").value());
+	} else {
+	    double Ro = units.alt(n.attribute("Ro").value()); //Outer annular radius
+	    double Ri = units.alt(n.attribute("Ri").value()); //Inner annular radius
+	    Ry_o = Ro;
+	    Rz_o = Ro;
+	    Ry_i = Ri;
+	    Rz_i = Ri;
+	}
+
+	double Ry2_o = Ry_o*Ry_o;
+	double Rz2_o = Rz_o*Rz_o;
+	double Ry2_i = Ry_i*Ry_i;
+	double Rz2_i = Rz_i*Rz_i;
+
+	reg.dy = y0 - Ry_o - 5;
+	reg.dz = z0 - Rz_o - 5;
+
+	reg.ny = 2*Ry_o + 10;
+	reg.nz = 2*Rz_o + 10;
+
+	    debug1("Filling XAnnulus with flag %d (%d)\n, with center at (%lf,%lf,%lf) inner radius (%lf,%lf) and outer radius (%lf,%lf)", fg, fg_mask, x0, y0, z0, Ry_i, Rz_i, Ry_o, Rz_o);
+	    DEBUG1(reg.print();)
+		for (int y = reg.dy; y < reg.dy + reg.ny; y++)
+		for (int z = reg.dz; z < reg.dz + reg.nz; z++)
+       		    for (int x = reg.dx; x < reg.dx + reg.nx; x++) {
+		double yy = (.5 + y - y0);
+		double zz = (.5 + z - z0);
+			if ( (zz*zz/Rz2_o + yy*yy/Ry2_o < 1.) && (zz*zz/Rz2_i + yy*yy/Ry2_i > 1. ) ) {
+			    Dot(x,y,z);
+			}
+		}
 	} else if (strcmp(n.name(),"Pipe") == 0) {
 	    debug1("Filling pipe with flag %d (&d)\n",fg,fg_mask);
 	    DEBUG1(reg.print();)
@@ -905,7 +1029,27 @@ int Geometry::Draw(pugi::xml_node & node)
 				        Dot(x,y,z);
                     }
                 }
-	}
+  } else if (strcmp(n.name(),"PipeY") == 0) {
+	    debug1("Filling pipe with flag %d (&d)\n",fg,fg_mask);
+	    DEBUG1(reg.print();)
+      for (int x = reg.dx - 1; x < reg.dx + reg.nx + 1; x++)
+		      for (int y = reg.dy ; y < reg.dy + reg.ny; y++)
+		          for (int z = reg.dz - 1; z < reg.dz + reg.nz + 1;z++) {
+			            if (!inSphere(0.5, (.5 + x - reg.dx) / reg.nx, (.5 + z - reg.dz) / reg.nz)) {
+				              Dot(x,y,z);
+			            }
+		          }
+	} else if (strcmp(n.name(),"PipeZ") == 0) {
+	    debug1("Filling Z-pipe with flag %d (&d)\n",fg,fg_mask);
+	    DEBUG1(reg.print();)
+        for (int z = reg.dz; z < reg.dz + reg.nz; z++)
+            for (int y = reg.dy - 1 ; y < reg.dy + reg.ny + 1; y++)
+                for (int x = reg.dx - 1; x < reg.dx + reg.nx + 1;x++) {
+                    if (!inSphere(0.5, (.5 + y - reg.dy) / reg.ny, (.5 + x - reg.dx) / reg.nx)) {
+				        Dot(x,y,z);
+                    }
+                }
+    }
     else if (strcmp(n.name(),"Cylinder") == 0) {
         debug1("Filling cylinder with flag %d (&d)\n",fg,fg_mask);
         DEBUG1(reg.print();)
@@ -929,79 +1073,7 @@ int Geometry::Draw(pugi::xml_node & node)
 			    Dot(x, y, z);
 			}
          }
-    } else if (strcmp(n.name(), "PythonInline") == 0) {
-        #ifdef EMBEDED_PYTHON
-        
-         if (!Py_IsInitialized()) {
-            notice("Python Init");
-            Py_Initialize();
-        }    
-        // Make sure the GIL has been created since we need to acquire it in our
-        // callback to safely call into the python application.
-        if (! PyEval_ThreadsInitialized()) {
-            PyEval_InitThreads();
-        }
-        
-        PyObject *pGlobal;
-        PyObject* pyModule, *pLocal, *pValue;
-
-        PyGILState_STATE state;
-        state = PyGILState_Ensure();
-   
-        pyModule = PyImport_AddModule("__main__"); 
-        pLocal = PyModule_GetDict(pyModule);
-        pGlobal = PyModule_GetDict(pyModule);
-
-
-
-        pValue = PyRun_String( n.child_value(), Py_file_input, pGlobal, pLocal );
-        if (pValue == NULL){
-             error("Provided Python code is not executable or does not contain 'test' function");    
-        }
-
-        PyObject* pFunc = PyObject_GetAttrString(pyModule, "test"); ;
-     //   Py_INCREF(pFunc);
-        Py_DECREF(pValue);
-
-
-        if (pFunc && PyCallable_Check(pFunc)) {
-            PyObject* pArgs;
-            pArgs = PyTuple_New(3);
-  
-            for (int x = reg.dx; x < reg.dx + reg.nx; x++)
-        	for (int y = reg.dy; y < reg.dy + reg.ny; y++)
-	            for (int z = reg.dz; z < reg.dz + reg.nz; z++) {
-
-                    PyTuple_SetItem( pArgs, 0, PyFloat_FromDouble((x-reg.dx)/(real_t)reg.nx));
-                    PyTuple_SetItem( pArgs, 1, PyFloat_FromDouble((y-reg.dy)/(real_t)reg.ny));
-                    PyTuple_SetItem( pArgs, 2, PyFloat_FromDouble((z-reg.dz)/(real_t)reg.nz));
-           
-                    //Call my function, passing it the number four
-                    pValue = PyObject_CallObject(pFunc, pArgs);
-
-           			if (  PyLong_AsLong(pValue) == 1 ) {
-   			             Dot(x, y, z);
-		            }
-                 
-                 }   
-            Py_DECREF(pArgs);
-        } else {
-            error("Provided Python code is not executable or does not contain 'test' function");        
-        }
-
-
-        Py_DECREF(pValue);
-  //      Py_XDECREF(pFunc);
- //       Py_DECREF(pGlobal);
-//        Py_DECREF(pLocal);
-        PyGILState_Release(state);
-      //  Py_Finalize();   
-
-        #else
-            error("You need to compile PYTHON support for this geometry element");
-        #endif
-
-	} else if (strcmp(n.name(), "STL") == 0) {
+    } else if (strcmp(n.name(), "STL") == 0) {
 	    debug1("Filling stl geometry with flag %d (%d)\n", fg, fg_mask);
 	    DEBUG1(reg.print();)
 		if (loadSTL(reg, n))

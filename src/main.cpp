@@ -4,10 +4,6 @@
 
 #include "Consts.h"
 
-#ifdef EMBEDED_PYTHON
-#include <Python.h>
-#endif
-
 #include "Global.h"
 #include <mpi.h>
 #include "Region.h"
@@ -28,6 +24,8 @@
 #include "Solver.h"
 #include "xpath_modification.h"
 #include "mpitools.hpp"
+
+#include "GetThreads.h"
 
 // Reads units from configure file and applies them to the solver
 int readUnits(pugi::xml_node config, Solver* solver) {
@@ -126,7 +124,7 @@ int MainCallback(int seg, int tot, Solver* solver) {
 				sprintf(left,  "%dh %2dm", left_h, left_m);
 			}
 		}
-		sprintf(buf, "%8.1f MLBUps   %7.2f GB/s", ((double)lbups)/1000, ( (double) lbups * ((double) 2 * NUMBER_OF_DENSITIES * sizeof(real_t) + sizeof(flag_t))) / 1e6);
+		sprintf(buf, "%8.1f MLBUps   %7.2f GB/s", ((double)lbups)/1000, ( (double) lbups * ((double) 2 * solver->lattice->model->fields.size() * sizeof(real_t) + sizeof(flag_t))) / 1e6);
 		int per_len = 20;
 		{
 			int i=0;
@@ -191,7 +189,7 @@ int main ( int argc, char * argv[] )
 	InitPrint(DEBUG_LEVEL, 6, 8);
 	MPI_Barrier(MPMD.local);
 
-	global_start = std::clock();
+	start_walltime();
 	if (solver->mpi_rank == 0) {
 		NOTICE("-------------------------------------------------------------------------\n");
 		NOTICE("-  CLB version: %25s                               -\n",VERSION);
@@ -351,7 +349,8 @@ int main ( int argc, char * argv[] )
 			CudaSetDevice( dev );
 			solver->mpi.gpu = dev;
 			debug2("Initializing device\n");
-			cudaFree(0);
+			CudaFree(0);
+			InitDim();
 		#else
 			output_all("Running on CPU\n");
 			CudaSetDevice(0);
@@ -409,17 +408,14 @@ int main ( int argc, char * argv[] )
 			return -1;
 		}
 	}
-    #ifdef EMBEDED_PYTHON
-    Py_Finalize();
-    #endif
 
 	// Finish and clean up
-	debug2("cudaFree ...\n");
+	debug2("CudaFree ...\n");
 	CudaEventDestroy( start );
 	CudaEventDestroy( stop );
 
 	if (solver->mpi_rank == 0) {
-		double duration = (std::clock() - global_start) / (double)CLOCKS_PER_SEC;
+		double duration = get_walltime();
 		output("Total duration: %lf s = %lf min = %lf h\n", duration, duration / 60, duration /60/60);
 	}
 	delete solver;

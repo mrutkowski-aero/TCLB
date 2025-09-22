@@ -11,7 +11,7 @@
 
 uint3 CpuBlock, CpuThread, CpuSize;
 
-void memcpy2D(void * dst_, int dpitch, void * src_, int spitch, int width, int height) {
+void memcpy2D(void * dst_, int dpitch, const void * src_, int spitch, int width, int height) {
 	char * dst = (char*) dst_, *src = (char*) src_;
 	for (int i=0; i<height; i++) {
 		memcpy(dst + i*dpitch, src + i*spitch, width);
@@ -21,11 +21,11 @@ void memcpy2D(void * dst_, int dpitch, void * src_, int spitch, int width, int h
 #else
 
 // Copyright 1993-2010 NVIDIA Corporation.  All rights reserved.
-cudaError_t HandleError( cudaError_t err,
+CudaError HandleError( CudaError err,
                          const char *file,
                          int line ) {
-    if (err != cudaSuccess) {
-        ERROR("%s in %s at line %d\n", cudaGetErrorString( err ), file, line );
+    if (err != CudaSuccess) {
+        ERROR("%s in %s at line %d\n", CudaGetErrorString( err ), file, line );
         exit( EXIT_FAILURE );
     }
 	return err;
@@ -122,9 +122,9 @@ cudaError_t HandleError( cudaError_t err,
 
         CudaError cudaPreAlloc(void ** ptr, size_t size) {
                 debug1("Preallocation of %d b\n", (int) size);
-                CudaError ret = CudaMalloc(ptr, size);
+                CudaMalloc(ptr, size); // This macro has error checking already
                 CudaMemset( *ptr, 0, size );
-                return ret;
+                return CudaSuccess;
         }
 
         CudaError cudaAllocFinalize() {
