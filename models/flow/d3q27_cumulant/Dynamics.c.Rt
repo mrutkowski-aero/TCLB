@@ -297,6 +297,14 @@ CudaDeviceFunction void WVelocityTurbulent() {
 	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ST.x"),V3=c(PV("ST.x"),PV("ST.y"),PV("ST.z"))) ?> 
 }
 
+CudaDeviceFunction void WVelocityABL() {
+    vector_t ABL;
+	ABL.x = FricVelocity*log(Z/Roughness)/kappa;
+	ABL.y = 0;
+	ABL.z = 0; 
+	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
+}
+
 CudaDeviceFunction void CollisionMRT()
 {	
  	 real_t w[10] = {1.0/(3*nu+0.5),1.,1.,1.,1.,1.,1.,1.,1.,1.};
