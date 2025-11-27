@@ -17,12 +17,15 @@ AddQuantity(name="U",unit="m/s",vector=T)
 
 AddSetting(name="nu", default=0.16666666, comment='Viscosity')
 AddSetting(name="nubuffer",default=0.01, comment='Viscosity in the buffer layer')
-AddSetting(name="Velocity", default="0m/s", comment='Inlet velocity', zonal=TRUE)
-AddSetting(name="FricVelocity", default="0m/s", comment='Friction velocity', zonal=TRUE)
+
+AddSetting(name="Velocity", default="0m/s", comment='Inlet or ustar or reference velocity', zonal=TRUE)
+AddSetting(name="SpecificHeight", default="0m", comment='Roughness height', zonal=TRUE)
+AddSetting(name="TurbulenceDefinition", default="0", comment='Type of ABL definition', zonal=TRUE)
 AddSetting(name="kappa", default="0.4", comment='von Karman constant', zonal=TRUE)
-AddSetting(name="Roughness", default="0m", comment='Roughness height', zonal=TRUE)
+AddSetting(name="TerrainClass", default="0.23", comment='Class of the terrain', zonal=TRUE)
 AddSetting(name="Pressure", default="0Pa", comment='Inlet pressure', zonal=TRUE)
 AddSetting(name="Turbulence", comment='Turbulence intensity', zonal=TRUE)
+
 AddSetting(name="GalileanCorrection",default=1.,comment='Galilean correction term')
 AddSetting(name="ForceX", default=0, comment='Force force X')
 AddSetting(name="ForceY", default=0, comment='Force force Y')
