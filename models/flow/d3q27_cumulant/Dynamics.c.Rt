@@ -307,13 +307,11 @@ CudaDeviceFunction void WVelocityABL() {
 			ABL.x = Velocity*log(Y/SpecificHeight)/kappa;
 			ABL.y = 0;
 			ABL.z = 0; 
-			<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?>
 			break;
 		case 1: // Velocity, SpecificHeight, TerrainClass 
 			ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass);
 			ABL.y = 0;
-			ABL.z = 0; 
-			<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
+			ABL.z = 0;  
 			break;
 		case 2: // Velocity, SpecificHeight
 			real_t Uabl[24] = {2.75, 2.94, 3.18, 3.44, 3.63, 3.83, 4.02, 4.21, 4.36, 4.49, 4.50, 4.59, 4.61, 4.71, 4.85, 4.99, 5.13, 5.45, 5.78, 6.08, 6.34, 6.59, 6.69, 6.75};
@@ -335,9 +333,9 @@ CudaDeviceFunction void WVelocityABL() {
 			ABL.x = xint;
 			ABL.y = 0;
 			ABL.z = 0; 
-			<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
 			break;
 	}
+	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
 }
 
 CudaDeviceFunction void CollisionMRT()
