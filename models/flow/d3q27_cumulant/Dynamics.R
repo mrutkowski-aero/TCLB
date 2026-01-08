@@ -20,6 +20,7 @@ AddSetting(name="nubuffer",default=0.01, comment='Viscosity in the buffer layer'
 
 AddSetting(name="Velocity", default="0m/s", comment='Inlet or ustar or reference velocity', zonal=TRUE)
 AddSetting(name="SpecificHeight", default="0m", comment='Roughness height', zonal=TRUE)
+AddSetting(name="ScaleCoeff", default="1", comment='Scale Coefficient for predefined data')
 AddSetting(name="TurbulenceDefinition", default=0, comment='Type of ABL definition', zonal=TRUE)
 AddSetting(name="kappa", default=0.4, comment='von Karman constant', zonal=TRUE)
 AddSetting(name="TerrainClass", default=0.23, comment='Class of the terrain', zonal=TRUE)

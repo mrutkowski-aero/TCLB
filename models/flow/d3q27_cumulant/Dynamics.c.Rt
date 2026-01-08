@@ -305,22 +305,7 @@ CudaDeviceFunction void WVelocityABL() {
 	ABL.x = ABL.y = ABL.z = 0;
 	if(TurbulenceDefinition == 0) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; 
 	if(TurbulenceDefinition == 1) ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass);
-	if(TurbulenceDefinition == 2){
-		real_t Uabl[24] = {2.75, 2.94, 3.18, 3.44, 3.63, 3.83, 4.02, 4.21, 4.36, 4.49, 4.50, 4.59, 4.61, 4.71, 4.85, 4.99, 5.13, 5.45, 5.78, 6.08, 6.34, 6.59, 6.69, 6.75};
-		real_t Habl[24] = {0.06, 0.13, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.00, 2.06, 2.13, 2.25, 2.38, 2.63, 2.88, 3.13, 3.75, 4.38, 5.00, 5.63, 6.25, 6.88, 7.50};
-		real_t xlag, xint;
-		xint = 0;
-		for (int i=0; i<24; i++)
-		{
-			xlag = 1.0;
-			for (int j=0; j<24; j++ )
-			{
-				if (i == j) continue;
-				xlag *= (Y - SpecificHeight*Habl[j]) / (SpecificHeight*(Habl[i] - Habl[j]));
-			}
-		xint += Uabl[i]*xlag;
-		}
-		ABL.x = xint;
+	if(TurbulenceDefinition == 2) {
 	}
 	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
 }
