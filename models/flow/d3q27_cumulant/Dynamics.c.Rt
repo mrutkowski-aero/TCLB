@@ -301,9 +301,9 @@ CudaDeviceFunction vector_t VelocityProfile() {
 	if(TurbulenceDefinition == 0) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; 
 	if(TurbulenceDefinition == 1) ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass);
 	if(TurbulenceDefinition == 2){
-                reat_t y = Y/SpecificHeight;
+                real_t y = Y/SpecificHeight;
                 ABL.x = -102.08*pow(y,6)+347.46*pow(y,5)-446.01*pow(y,4)+267.5*pow(y,3)-80.798*pow(y,2)+17.961*pow(y,1)+2.7277;
-                ABL.x = Velocity*ABL.x
+                ABL.x = Velocity*ABL.x;
         }
         return ABL;
 }
