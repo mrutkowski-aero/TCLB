@@ -262,6 +262,9 @@ CudaDeviceFunction void RunBoundaries() {
 	case NODE_Wall:
 		BounceBack();
         break;
+        case NODE_Fixed:
+                Fixed();
+        break;
     }
 }
 
@@ -292,15 +295,7 @@ CudaDeviceFunction void Init() {
 	else SetEquilibrum(1.0 + Pressure * 3.0, ST.x, ST.y, ST.z);
 }
 
-CudaDeviceFunction void WVelocityTurbulent() {
-    vector_t ST = SyntheticTurbulence(X-Time*Velocity,Y,Z);
-	ST.x = Turbulence*ST.x + Velocity;
-	ST.y = Turbulence*ST.y;
-	ST.z = Turbulence*ST.z; 
-	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ST.x"),V3=c(PV("ST.x"),PV("ST.y"),PV("ST.z"))) ?> 
-}
-
-CudaDeviceFunction void WVelocityABL() {
+CudaDeviceFunction vector_t VelocityProfile() {
 	vector_t ABL;
 	ABL.x = ABL.y = ABL.z = 0;
 	if(TurbulenceDefinition == 0) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; 
@@ -310,6 +305,30 @@ CudaDeviceFunction void WVelocityABL() {
                 ABL.x = -102.08*pow(y,6)+347.46*pow(y,5)-446.01*pow(y,4)+267.5*pow(y,3)-80.798*pow(y,2)+17.961*pow(y,1)+2.7277;
                 ABL.x = Velocity*ABL.x
         }
+        return ABL;
+}
+
+
+CudaDeviceFunction void Fixed() {
+        vector_t v0 = VelocityProfile();
+	vector_t ST = SyntheticTurbulence(X - Time*v0.x, Y, Z);
+	ST.x = Turbulence*ST.x + v0.x;
+	ST.y = Turbulence*ST.y + v0.y;
+	ST.z = Turbulence*ST.z + v0.z;
+	SetEquilibrum(1.0 + Pressure * 3.0, ST.x, ST.y, ST.z);
+}
+
+CudaDeviceFunction void WVelocityTurbulent() {
+        vector_t v0 = VelocityProfile();
+        vector_t ST = SyntheticTurbulence(X-Time*v0.x,Y,Z);
+	ST.x = Turbulence*ST.x + v0.x;
+	ST.y = Turbulence*ST.y + v0.y;
+	ST.z = Turbulence*ST.z + v0.z; 
+	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ST.x"),V3=c(PV("ST.x"),PV("ST.y"),PV("ST.z"))) ?> 
+}
+
+CudaDeviceFunction void WVelocityABL() {
+	vector_t ABL = VelocityProfile();
         <?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
 }
 
