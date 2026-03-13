@@ -236,35 +236,35 @@ CudaDeviceFunction void RunBoundaries() {
 		WVelocityABL();
 		break;
 	case NODE_EPressure:
-        EPressure();
-        break;
+                EPressure();
+                break;
 	case NODE_WPressure:
 		WPressure();
 		break;
 	case NODE_SPressure:
-        SPressure();
-        break;
+                SPressure();
+                break;
 	case NODE_NPressure:
-        NPressure();
-        break;
+                NPressure();
+                break;
 	case NODE_WVelocity:
 		WVelocity();
 		break;
 	 case NODE_NVelocity:
-        NVelocity();
-        break;
+                NVelocity();
+                break;
 	 case NODE_SVelocity:
-        SVelocity();
-        break;
+                SVelocity();
+                break;
 	case NODE_EVelocity:
 		EVelocity();
 		break;
 	case NODE_Wall:
 		BounceBack();
-        break;
+                break;
         case NODE_Fixed:
                 Fixed();
-        break;
+                break;
     }
 }
 
@@ -284,52 +284,68 @@ CudaDeviceFunction void SetEquilibrum(real_t rho, real_t Jx, real_t Jy, real_t J
 	?>
 }
 
-CudaDeviceFunction void Init() {
-	vector_t ST = SyntheticTurbulence(X,Y,Z);
-	ST.x = Turbulence*ST.x + Velocity;
-	ST.y = Turbulence*ST.y;
-	ST.z = Turbulence*ST.z;
-
-	if((NodeType & NODE_BOUNDARY) == NODE_Wall){
-	    SetEquilibrum(1.0,0,0,0);}
-	else SetEquilibrum(1.0 + Pressure * 3.0, ST.x, ST.y, ST.z);
-}
-
-CudaDeviceFunction vector_t VelocityProfile() {
-	vector_t ABL;
-	ABL.x = ABL.y = ABL.z = 0;
-	if(TurbulenceDefinition == 0) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; 
-	if(TurbulenceDefinition == 1) ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass);
-	if(TurbulenceDefinition == 2){
-                real_t y = Y/SpecificHeight;
-                ABL.x = -102.08*pow(y,6)+347.46*pow(y,5)-446.01*pow(y,4)+267.5*pow(y,3)-80.798*pow(y,2)+17.961*pow(y,1)+2.7277;
-                ABL.x = Velocity*ABL.x;
-        }
-        return ABL;
-}
-
-
-CudaDeviceFunction void Fixed() {
-        vector_t v0 = VelocityProfile();
-	vector_t ST = SyntheticTurbulence(X - Time*v0.x, Y, Z);
-	ST.x = Turbulence*ST.x + v0.x;
-	ST.y = Turbulence*ST.y + v0.y;
-	ST.z = Turbulence*ST.z + v0.z;
-	SetEquilibrum(1.0 + Pressure * 3.0, ST.x, ST.y, ST.z);
-}
-
 CudaDeviceFunction void WVelocityTurbulent() {
+        real_t TKE = TKEProfile();
         vector_t v0 = VelocityProfile();
         vector_t ST = SyntheticTurbulence(X-Time*v0.x,Y,Z);
-	ST.x = Turbulence*ST.x + v0.x;
-	ST.y = Turbulence*ST.y + v0.y;
-	ST.z = Turbulence*ST.z + v0.z; 
+	ST.x = sqrt(TKE*2/3)*ST.x + v0.x;
+	ST.y = sqrt(TKE*2/3)*ST.y + v0.y;
+	ST.z = sqrt(TKE*2/3)*ST.z + v0.z; 
 	<?R ZouHe(EQ, 1, 1, "velocity",V=PV("ST.x"),V3=c(PV("ST.x"),PV("ST.y"),PV("ST.z"))) ?> 
 }
 
 CudaDeviceFunction void WVelocityABL() {
 	vector_t ABL = VelocityProfile();
         <?R ZouHe(EQ, 1, 1, "velocity",V=PV("ABL.x"),V3=c(PV("ABL.x"),PV("ABL.y"),PV("ABL.z"))) ?> 
+}
+
+CudaDeviceFunction void Init() {
+        real_t TKE = TKEProfile();
+        vector_t v0 = VelocityProfile();
+	vector_t ST = SyntheticTurbulence(X,Y,Z);
+        real_t TurbulentProf = TKEProfile();
+	ST.x = sqrt(TKE*2/3)*ST.x + Velocity;
+	ST.y = sqrt(TKE*2/3)*ST.y;
+	ST.z = sqrt(TKE*2/3)*ST.z;
+
+	if((NodeType & NODE_BOUNDARY) == NODE_Wall){
+	    SetEquilibrum(1.0,0,0,0);}
+	else SetEquilibrum(1.0 + Pressure * 3.0, ST.x, ST.y, ST.z);
+}
+
+CudaDeviceFunction void Fixed() {
+        vector_t v0 = VelocityProfile();
+	SetEquilibrum(1.0 + Pressure * 3.0, v0.x, v0.y, v0.z);
+}
+
+CudaDeviceFunction vector_t VelocityProfile() {
+	vector_t ABL;
+	ABL.x = ABL.y = ABL.z = 0;
+	if(TurbulenceDefinition == 0) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; // Logarythmic distribution
+	if(TurbulenceDefinition == 1) ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass); //European norm
+	if(TurbulenceDefinition == 2){
+                real_t y = Y/SpecificHeight;
+                ABL.x = -102.08*pow(y,6)+347.46*pow(y,5)-446.01*pow(y,4)+267.5*pow(y,3)-80.798*pow(y,2)+17.961*pow(y,1)+2.7277;
+                ABL.x = Velocity*ABL.x;
+
+        }
+        return ABL;
+}
+
+CudaDeviceFunction real_t TKEProfile() {
+	real_t TKE = 0.0;
+	if(TurbulenceDefinition == 0) TKE = Velocity*Velocity/sqrt(0.09); 
+	if(TurbulenceDefinition == 1) {
+                vector_t v0 = VelocityProfile();
+                TKE = pow(v0.x*0.1*pow(Y/SpecificHeight, -TerrainClass-0.05),2);
+        }
+        if(TurbulenceDefinition == 2){
+                real_t y = Y/SpecificHeight;
+                TKE = -5.2954*pow(y,6)+10.504*pow(y,5)-7.4432*pow(y,4)+8.0797*pow(y,3)-9.2228*pow(y,2)+3.0146*pow(y,1)+0.3663;
+                TKE = Turbulence*Turbulence*TKE;
+        }
+        //return sqrt(TKE*2/3);
+        return TKE;
 }
 
 CudaDeviceFunction void CollisionMRT()
