@@ -304,9 +304,9 @@ CudaDeviceFunction void Init() {
         vector_t v0 = VelocityProfile();
 	vector_t ST = SyntheticTurbulence(X,Y,Z);
         real_t TurbulentProf = TKEProfile();
-	ST.x = sqrt(TKE*2/3)*ST.x + Velocity;
-	ST.y = sqrt(TKE*2/3)*ST.y;
-	ST.z = sqrt(TKE*2/3)*ST.z;
+	ST.x = sqrt(TKE*2/3)*ST.x + v0.x;
+	ST.y = sqrt(TKE*2/3)*ST.y + v0.y;
+	ST.z = sqrt(TKE*2/3)*ST.z + v0.z;
 
 	if((NodeType & NODE_BOUNDARY) == NODE_Wall){
 	    SetEquilibrum(1.0,0,0,0);}
