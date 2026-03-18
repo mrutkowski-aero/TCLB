@@ -321,9 +321,10 @@ CudaDeviceFunction void Fixed() {
 CudaDeviceFunction vector_t VelocityProfile() {
 	vector_t ABL;
 	ABL.x = ABL.y = ABL.z = 0;
-	if(TurbulenceDefinition == 0) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; // Logarythmic distribution
-	if(TurbulenceDefinition == 1) ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass); //European norm
-	if(TurbulenceDefinition == 2){
+        if(TurbulenceDefinition == 0) ABL.x = Velocity;
+	if(TurbulenceDefinition == 1) ABL.x = Velocity*log(Y/SpecificHeight)/kappa; // Logarythmic distribution
+	if(TurbulenceDefinition == 2) ABL.x = Velocity*pow(Y/SpecificHeight,TerrainClass); //European norm
+	if(TurbulenceDefinition == 3){
                 real_t y = Y/SpecificHeight;
                 ABL.x = -102.08*pow(y,6)+347.46*pow(y,5)-446.01*pow(y,4)+267.5*pow(y,3)-80.798*pow(y,2)+17.961*pow(y,1)+2.7277;
                 ABL.x = Velocity*ABL.x;
@@ -334,12 +335,13 @@ CudaDeviceFunction vector_t VelocityProfile() {
 
 CudaDeviceFunction real_t TKEProfile() {
 	real_t TKE = 0.0;
-	if(TurbulenceDefinition == 0) TKE = Velocity*Velocity/sqrt(0.09); 
-	if(TurbulenceDefinition == 1) {
+        if(TurbulenceDefinition == 0) TKE = Turbulence*Turbulence; 
+	if(TurbulenceDefinition == 1) TKE = Velocity*Velocity/sqrt(0.09); 
+	if(TurbulenceDefinition == 2) {
                 vector_t v0 = VelocityProfile();
                 TKE = pow(v0.x*0.1*pow(Y/SpecificHeight, -TerrainClass-0.05),2);
         }
-        if(TurbulenceDefinition == 2){
+        if(TurbulenceDefinition == 3){
                 real_t y = Y/SpecificHeight;
                 TKE = -5.2954*pow(y,6)+10.504*pow(y,5)-7.4432*pow(y,4)+8.0797*pow(y,3)-9.2228*pow(y,2)+3.0146*pow(y,1)+0.3663;
                 TKE = Turbulence*Turbulence*TKE;
