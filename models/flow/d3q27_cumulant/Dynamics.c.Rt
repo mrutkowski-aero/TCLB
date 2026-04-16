@@ -287,7 +287,7 @@ CudaDeviceFunction void SetEquilibrum(real_t rho, real_t Jx, real_t Jy, real_t J
 CudaDeviceFunction void WVelocityTurbulent() {
         real_t TKE = TKEProfile();
         vector_t v0 = VelocityProfile();
-        vector_t ST = SyntheticTurbulence(X-Time*v0.x,Y,Z);
+        vector_t ST = SyntheticTurbulence(X-Time*Velocity,Y,Z);
 	ST.x = sqrt(TKE*2/3)*ST.x + v0.x;
 	ST.y = sqrt(TKE*2/3)*ST.y + v0.y;
 	ST.z = sqrt(TKE*2/3)*ST.z + v0.z; 
