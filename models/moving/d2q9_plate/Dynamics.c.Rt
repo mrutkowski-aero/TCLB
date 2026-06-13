@@ -352,12 +352,14 @@ switch (BF) {
 //dx = fabs(dx*2);
 //dy = fabs(dy*2);
 
+real_t Vx = 0;
+real_t Vy = 0;
 if((PVX+PVY) == 0){
-real_t Vx = PX_DT - PR_DT*py;
-real_t Vy = PY_DT + PR_DT*px;
+Vx = PX_DT - PR_DT*py;
+Vy = PY_DT + PR_DT*px;
 } else {
-real_t Vx = PVX;
-real_t Vy = PVY;
+Vx = PVX;
+Vy = PVY;
 }
 
 real_t Fx = 2*w*(Vx*d - u[0]);
