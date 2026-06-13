@@ -336,15 +336,15 @@ real_t w = 0;
 
 switch (BF) {
 	case 0:
-		w = eps
+		w = eps;
 		break;
 	case 1:
 		w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
 		break;
 	case 2:
-		w = nu*vf*(3-2*vf)/(1-vf)^2
-		w = w/(1+w/2)
-		w = w/2
+		w = nu*vf*(3-2*vf)/(1-vf)^2;
+		w = w/(1+w/2);
+		w = w/2;
 		break;
 }
 
