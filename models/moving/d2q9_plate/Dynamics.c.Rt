@@ -334,20 +334,15 @@ real_t dy =-px*sin(PR) + py*cos(PR);
 real_t eps = calcW(dx, dy);
 real_t w = 0;
 
-switch (BF) {
-	case 0:
-		w = eps;
-		break;
-	case 1:
-		w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
-		break;
-	case 2:
-		w = nu*eps*(3-2*eps)/(1-eps)^2;
-		w = w/(1+w/2);
-		w = w/2;
-		break;
+if(BF == 0){
+	w = eps;
+} else if(BF == 1) {
+	w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
+} else {
+	w = nu*eps*(3-2*eps)/(1-eps)^2;
+	w = w/(1+w/2);
+	w = w/2;
 }
-
 
 //dx = fabs(dx*2);
 //dy = fabs(dy*2);
