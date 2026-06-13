@@ -339,7 +339,7 @@ if(BF == 0){
 } else if(BF == 1) {
 	w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
 } else {
-	w = nu*eps*(3-2*eps)/(1-eps)^2;
+	w = nu*eps*(3-2*eps)/(1-eps)*(1-eps);
 	w = w/(1+w/2);
 	w = w/2;
 }
