@@ -334,18 +334,32 @@ real_t dy =-px*sin(PR) + py*cos(PR);
 real_t eps = calcW(dx, dy);
 real_t w = 0;
 
-if(BF == 0){
-	w = eps;
-} else {
-	w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
+switch (BF) {
+	case 0:
+		w = eps
+		break;
+	case 1:
+		w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
+		break;
+	case 2:
+		w = nu*vf*(3-2*vf)/(1-vf)^2
+		w = w/(1+w/2)
+		w = w/2
+		break;
 }
 
 
 //dx = fabs(dx*2);
 //dy = fabs(dy*2);
 
+if((PVX+PVY) == 0){
 real_t Vx = PX_DT - PR_DT*py;
 real_t Vy = PY_DT + PR_DT*px;
+} else {
+real_t Vx = PVX;
+real_t Vy = PVY;
+}
+
 real_t Fx = 2*w*(Vx*d - u[0]);
 real_t Fy = 2*w*(Vy*d - u[1]);
 AddToForceX(Fx);

@@ -65,7 +65,7 @@ AddGlobal(name="Power", comment='reaction force X', unit="W/m")
 AddGlobal(name="Power2", comment='reaction force Y', unit="W/m")
 AddGlobal(name="VolumeW", comment="Volume of moving body", unit="m2")
 
-
+# ----------------- IB Settings
 AddSetting(name="PDX", default=0, comment='plate diameter X', unit="m")
 AddSetting(name="PDY", default=0, comment='plate diameter Y', unit="m")
 AddSetting(name="PRAD", default=0, comment='cylinder radious', unit='m')
@@ -76,6 +76,8 @@ AddSetting(name="BF", default=0, comment='beta function bool')
 AddSetting(name="PX", default=0, comment='plate position X', zonal=T, unit="m")
 AddSetting(name="PY", default=0, comment='plate position Y', zonal=T, unit="m")
 AddSetting(name="PR", default=0, comment='plate angle', zonal=T, unit="1")
+AddSetting(name="PVX", default=0, comment='wall velocity', zonal=T, unit="1")
+AddSetting(name="PVY", default=0, comment='wall velocity', zonal=T, unit="1")
 
 AddObjective("EfficiencyX", PV("ForceX") * PV("Power") ^ (-1))
 AddObjective("EfficiencyY", PV("ForceY") * PV("Power") ^ (-1))
