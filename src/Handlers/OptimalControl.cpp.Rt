@@ -86,7 +86,7 @@ int OptimalControl::Parameters (int type, double * tab) {
 			solver->lattice->zSet.get(par_index, zone_number, tab);
 			if (f != NULL) {
 				fprintf(f,"GET");
-				for (int i=0;i<Pars;i++) fprintf(f,",%lg",(double) tab[i]);
+				for (int i=0;i<Pars;i++) fprintf(f,",%.15le",(double) tab[i]);
 				fprintf(f,"\n"); fflush(f);
 			}
 			return 0;
@@ -95,7 +95,7 @@ int OptimalControl::Parameters (int type, double * tab) {
 			MPI_Bcast(tab, Pars, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 			if (f != NULL) {
 				fprintf(f,"SET");
-				for (int i=0;i<Pars;i++) fprintf(f,",%lg",(double) tab[i]);
+				for (int i=0;i<Pars;i++) fprintf(f,",%.15le",(double) tab[i]);
 				fprintf(f,"\n"); fflush(f);
 			}
 			solver->lattice->zSet.set(par_index, zone_number, tab);
@@ -106,7 +106,7 @@ int OptimalControl::Parameters (int type, double * tab) {
 			MPI_Reduce(tmptab, tab, Pars, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			if (f != NULL) {
 				fprintf(f,"GRAD");
-				for (int i=0;i<Pars;i++) fprintf(f,",%lg",(double) tab[i]);
+				for (int i=0;i<Pars;i++) fprintf(f,",%.15le",(double) tab[i]);
 				fprintf(f,"\n"); fflush(f);
 			}
 			return 0;
