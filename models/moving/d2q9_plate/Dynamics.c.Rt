@@ -1,5 +1,5 @@
 <?R
-	source("conf.R") 
+	source("conf.R")
 	c_header();
 	sel = Density$group == "f"
 	f = PV(Density$name[sel])
@@ -75,6 +75,29 @@ CudaDeviceFunction real_t getSolid(){
 	return w;
 }
 
+CudaDeviceFunction real_t getW(){
+	real_t px = X - PX;
+	real_t py = Y - PY;
+	real_t dx = px*cos(PR) + py*sin(PR);
+	real_t dy =-px*sin(PR) + py*cos(PR);
+	real_t eps = calcW(dx,dy);
+	real_t w = 0;
+	real_t tau = 3.0*nu+0.5;
+	
+	if(BF == 0){
+		w = eps;
+	} else if(BF == 1) {
+		w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
+	} else if(BF == 2) {
+		//w = nu*eps*(3.0-2.0*eps)/((1.0-eps)*(1.0-eps));
+		//w = w/(1.0+w/2.0);
+		//w = w/2
+		w = (nu*eps*(3.0-2.0*eps));
+		w = w / (2*(1.0-eps)*(1.0-eps) + w);
+	}
+
+	return w;
+}
 
 CudaDeviceFunction float2 Color() {
         float2 ret;
@@ -129,6 +152,10 @@ CudaDeviceFunction void Run() {
     if (NodeType & NODE_MRT)
     {
 		CollisionMRT();
+    }
+	    if (NodeType & NODE_PSMRT)
+    {
+		CollisionPSMRT();
     }
 }
 
@@ -253,6 +280,77 @@ CudaDeviceFunction real_t calcW(real_t dx, real_t dy) {
 	return ret;
 }
 
+CudaDeviceFunction void CollisionPSMRT()
+{
+
+	real_t newf[9], u[2], us[2];
+	real_t d, tau, w, Fx, Fy, px, py;
+	
+	tau = 3.0*nu+0.5;
+	w = getW();
+	Fx = 0;
+	Fy = 0;
+	px = X - PX;
+	py = Y - PY;
+	if((PVX+PVY) == 0){
+		us[0] = PX_DT - PR_DT*py;
+		us[1] = PY_DT + PR_DT*px;
+	} else {
+		us[0] = PVX;
+		us[1] = PVY;
+	}
+
+<?R
+	source("lib/feq.R")
+	source("lib/lattice.R")
+	
+	U = d2q9
+	bounce = c(0,3,4,1,2,7,8,5,6)
+	
+	rho = PV("d")
+	#forcex = PV("Fx")
+	u = PV("u[",1:2-1,"]")
+	u_solid = PV("us[",1:2-1,"]")
+	J = rho*u
+	w = PV("w")
+	#f = PV("f[",1:9-1,"]")
+	newf = PV("newf[",1:9-1,"]")
+
+	EQ = MRT_eq(U,rho = rho, J = J)
+	EQ_S = MRT_eq(U,rho = rho, J = rho*u_solid)
+
+	tau = PV("tau")
+	omega_bgk = tau^{-1}*(f - EQ$feq)*(-1)
+	# tau^{-1}*(u - u)*(-1) = 0
+	omega_s = f[bounce+1] - f + EQ_S$feq - EQ$feq[bounce+1]
+	C(rho, sum(f))
+	C(u, f %*% U[,1:2] * rho^{-1})
+	#C(forcex, sum(omega_s %*% f))
+	C(newf,f + (1-w)*omega_bgk + w*omega_s)
+	C(f,newf)
+
+	
+	
+?>
+Fx = w*(us[0] - u[0])*d;
+Fy = w*(us[1] - u[1])*d;
+
+//if(w==1){
+	AddToForceX(Fx);
+	AddToForceY(Fy);
+	AddToMoment(Fx*py-Fy*px);
+	AddToPowerX(PX_DT*Fx);
+	AddToPowerY(PY_DT*Fy);
+	AddToPowerR(PR_DT*(-Fx*py+Fy*px));
+	AddToPower(Fx*us[0] + Fy*us[1]);
+//}
+AddToVolumeW(w);
+avg_ux = avg_ux + u[0] + Fx/2;
+avg_uy = avg_uy + u[1] + Fy/2;
+avg_fx = avg_fx + Fx;
+avg_fy = avg_fy + Fy;
+}
+
 CudaDeviceFunction void CollisionMRT()
 {
 	real_t u[2], usq, d, R[6], Q, tau, omega;
@@ -332,20 +430,19 @@ real_t dx = px*cos(PR) + py*sin(PR);
 real_t dy =-px*sin(PR) + py*cos(PR);
 
 real_t eps = calcW(dx, dy);
-real_t w = 0;
-
+real_t w = 0.0;
+	
 if(BF == 0){
 	w = eps;
 } else if(BF == 1) {
 	w = (eps * (tau - 0.5)) / ((1 - eps) + (tau - 0.5));
-} else {
-	w = nu*eps*(3.0-2.0*eps)/((1.0-eps)*(1.0-eps));
-	w = w/(1.0+w/2.0);
-	w = w/2.0;
+} else if(BF == 2) {
+	//w = nu*eps*(3.0-2.0*eps)/((1.0-eps)*(1.0-eps));
+	//w = w/(1.0+w/2.0);
+	//w = w/2
+	w = (nu*eps*(3.0-2.0*eps));
+	w = w / (2*(1.0-eps)*(1.0-eps) + w);
 }
-
-//dx = fabs(dx*2);
-//dy = fabs(dy*2);
 
 real_t Vx = 0;
 real_t Vy = 0;

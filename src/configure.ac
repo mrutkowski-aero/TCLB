@@ -284,15 +284,17 @@ then
 	then
 		AC_MSG_RESULT([${CUDA_ARCH}])
 		AC_DEFINE([GRID3D], [1], [Using 3D block grid in CUDA])
-
-    	CUDA_SUFF="60"
-	
+		CUDA_SUFF="60"
+	elif test "$CUDA_ARCH" == "sm_52"
+	then
+		AC_MSG_RESULT([${CUDA_ARCH}])
+		AC_DEFINE([GRID3D], [1], [Using 3D block grid in CUDA])
+		CUDA_SUFF="52"
 	elif test "$CUDA_ARCH" == "sm_75"
 	then
 		AC_MSG_RESULT([${CUDA_ARCH}])
 		AC_DEFINE([GRID3D], [1], [Using 3D block grid in CUDA])
-
-    	CUDA_SUFF="75"
+	    	CUDA_SUFF="75"
 	else
 		AC_MSG_ERROR([unknown arch ${CUDA_ARCH}])
 	fi

@@ -22,6 +22,14 @@ AddDensity( name="avg_fy", group="avg_f")
 
 AddNodeType(name="NVelocity", group="BOUNDARY")
 AddNodeType(name="SPressure", group="BOUNDARY")
+AddNodeType(name="EPressure", group="BOUNDARY")
+AddNodeType(name="EVelocity", group="BOUNDARY")
+AddNodeType(name="Solid", group="BOUNDARY")
+AddNodeType(name="Wall", group="BOUNDARY")
+AddNodeType(name="WPressure", group="BOUNDARY")
+AddNodeType(name="WVelocity", group="BOUNDARY")
+AddNodeType(name="MRT", group="COLLISION")
+AddNodeType(name="PSMRT", group="COLLISION")
 
 # Quantities - table of fields that can be exported from the LB lattice (like density, velocity etc)
 #  name - name of the field
@@ -35,6 +43,7 @@ AddQuantity(name="U",unit="m/s",vector=T)
 AddQuantity(name="U_AVG",unit="m/s",vector=T)
 AddQuantity(name="F_AVG",unit="N/m3",vector=T)
 AddQuantity(name="Solid",unit="1")
+AddQuantity(name="W",unit="1")
 
 # Settings - table of settings (constants) that are taken from a .xml file
 #  name - name of the constant variable
@@ -84,10 +93,4 @@ AddObjective("EfficiencyY", PV("ForceY") * PV("Power") ^ (-1))
 
 AddSetting(name="ExternalForceX", default=0, comment='external force x', zonal=T, unit="N/m3")
 AddSetting(name="ExternalForceY", default=0, comment='external force y', zonal=T, unit="N/m3")
-AddNodeType(name="EPressure", group="BOUNDARY")
-AddNodeType(name="EVelocity", group="BOUNDARY")
-AddNodeType(name="Solid", group="BOUNDARY")
-AddNodeType(name="Wall", group="BOUNDARY")
-AddNodeType(name="WPressure", group="BOUNDARY")
-AddNodeType(name="WVelocity", group="BOUNDARY")
-AddNodeType(name="MRT", group="COLLISION")
+
